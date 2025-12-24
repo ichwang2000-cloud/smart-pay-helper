@@ -1,0 +1,33 @@
+name: Build WebView APK
+
+on:
+  workflow_dispatch: # 수동으로 빌드 시작 버튼을 누를 때 작동합니다.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Build APK using Template
+        # WebView APK를 만들어주는 오픈소스 도구를 사용합니다.
+        uses: fscoward/create-webview-apk@v1
+        with:
+          app_name: "스마트 수당 비서"
+          url: "https://smart-pay-apper-jvaqpqkapkkgdxajyywfph.streamlit.app/"
+          package_name: "com.ktx.paycalc"
+          icon_url: "https://raw.githubusercontent.com/streamlit/docs/main/public/favicon.png" # 임시 아이콘
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: Smart-Pay-Assistant-APK
+          path: ./*.apk
