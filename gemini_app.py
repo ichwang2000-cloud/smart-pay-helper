@@ -96,4 +96,54 @@ if st.session_state['page'] == 'input':
 
     # 계산 실행 버튼
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    if st.button("계산 결과 확인하기 🚀",
+    if st.button("계산 결과 확인하기 🚀", type="primary"):
+        active_model = get_active_model()
+        if not active_model:
+            st.error("AI 모델을 찾을 수 없습니다.")
+        elif not img_data and not t_val:
+            st.warning("데이터를 입력하거나 이미지를 올려주세요.")
+        else:
+            with st.spinner("AI가 근무표를 정밀 분석 중입니다..."):
+                try:
+                    model = genai.GenerativeModel(active_model)
+                    content = [img_data] if img_data else []
+                    prompt = f"""
+                    역할: 승무원 급여 정산 전문가
+                    데이터: 시급 {wage}원, 수동입력정보({t_val}, {n_val})
+                    지시: 이미지(다이아조회/명세서)가 있으면 휴게시간을 제외한 실근무를 분석하세요. 
+                    항목별(휴일1, 휴일2, 야간)로 계산 과정을 상세히 설명하고, 
+                    마지막엔 '### **총합: [금액]원**'으로 강조해서 끝내주세요.
+                    """
+                    content.append(prompt)
+                    res = model.generate_content(content)
+                    st.session_state['result_text'] = res.text
+                    st.session_state['page'] = 'result'
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"분석 오류: {e}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# --------------------------------------------------------------------------
+# [화면 2] 결과 페이지 (Result Page)
+# --------------------------------------------------------------------------
+else:
+    st.markdown("<div class='header-bar'><span style='font-size:1.2rem; font-weight:bold;'>📝 분석 결과</span></div>", unsafe_allow_html=True)
+    
+    st.markdown("<div style='padding: 20px;'>", unsafe_allow_html=True)
+    if st.button("🏠 홈으로 돌아가기", type="secondary"):
+        st.session_state['page'] = 'input'
+        st.rerun()
+
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    
+    # AI 결과 출력 (복사 가능)
+    st.markdown(f"<div class='result-box'>{st.session_state['result_text']}</div>", unsafe_allow_html=True)
+    
+    st.divider()
+    with st.expander("📋 전체 결과 복사하기"):
+        st.code(st.session_state['result_text'], language=None)
+    
+    if st.button("🔄 새로 계산하기", type="primary"):
+        st.session_state['page'] = 'input'
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
